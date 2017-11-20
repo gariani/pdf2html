@@ -1,31 +1,25 @@
-package com.lightbend.akka.http.gariani.WebService.Actors
+package com.lightbend.akka.http.gariani.Custom
 
-import java.io.FileOutputStream
+import java.io.{File, FileOutputStream}
 import java.util.UUID
 
-import akka.actor.{Actor, Props}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Multipart
-import akka.pattern.pipe
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.lightbend.akka.http.gariani.Component.ConfigDataPersistence
+import com.lightbend.akka.http.gariani.Component.{ConfigDataPersistence}
 import com.lightbend.akka.http.gariani.Component.Pdf.PdfObject
-import com.lightbend.akka.http.gariani.WebService.Actors.ConvertFileActor.GetMultiPart
+import com.lightbend.akka.http.gariani.Component.RabbitMQ.{NewFileConvert, PublisherFileActor}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+/**
+	* Created by daniel on 21/10/17.
+	* reference: https://gist.github.com/jrudolph/08d0d28e1eddcd64dbd0#file-testmultipartfileupload-scala-L52
+	*/
 
-object SaveFileActors {
-	def props(implicit materializer: ActorMaterializer, dispatcher: ExecutionContext) = Props(new SaveFileActor())
-}
-
-class SaveFileActor(implicit materializer: ActorMaterializer, dispatcher: ExecutionContext)
-	extends ConfigDataPersistence with Actor {
-
-	override def receive: akka.actor.Actor.Receive = {
-		case GetMultiPart(formPart) =>
-			val originalSender = sender()
-			saveFile(formPart) pipeTo originalSender
-	}
+class SaveFile(implicit ac: ActorSystem, afm: ActorMaterializer)
+	extends ConfigDataPersistence {
 
 	def saveFile(fileData: Multipart.FormData): Future[Option[PdfObject]] = {
 		val fileName = UUID.randomUUID().toString + ".pdf"
@@ -36,6 +30,8 @@ class SaveFileActor(implicit materializer: ActorMaterializer, dispatcher: Execut
 				val obj = PdfObject.apply(storageService.getBucketName, fileName, size)
 				databaseService.insert(obj)
 				storageService.putObject(fileName, filePath)
+				val publish = ac.actorOf(PublisherFileActor.props)
+				publish ! NewFileConvert(obj)
 				Some(obj)
 			case _ => None
 		}

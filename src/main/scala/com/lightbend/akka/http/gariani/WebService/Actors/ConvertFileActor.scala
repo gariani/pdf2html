@@ -8,31 +8,64 @@ import akka.http.scaladsl.model.Multipart
 import akka.pattern.pipe
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.lightbend.akka.http.gariani.Component.ConfigDataPersistence
+import com.lightbend.akka.http.gariani.Component.{ConfigDataPersistence, ConfigRabbitMQComponent}
 import com.lightbend.akka.http.gariani.Component.Storage.ObjectStat
-import com.lightbend.akka.http.gariani.Custom.Pdf.{HtmlObject, ObjectFileType, PdfObject}
+import com.lightbend.akka.http.gariani.Component.Pdf.{HtmlObject, ObjectFileType, PdfObject}
 import com.lightbend.akka.http.gariani.Custom.{DataBaseError, Parameter, Parameters}
+import com.lightbend.akka.http.gariani.WebService.Actors.ConvertFileActor.{ConvertFile, ConvertPdfFile}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.sys.process._
 
-case class GetMultiPart(formData: Multipart.FormData)
+object ConvertFileActor {
 
-case class ConvertFile(param: Parameters)
+	case class GetMultiPart(formData: Multipart.FormData)
 
-object ConvertFileActors {
-	def props(implicit materializer: ActorMaterializer, dispatcher: ExecutionContext) = Props(new ConvertFileActor())
+	case class ConvertFile(param: Parameters)
+
+	case class ConvertPdfFile(pdf: PdfObject)
+
+	def props(implicit materializer: ActorMaterializer, dispatcher: ExecutionContext): Props =
+		Props(new ConvertFileActor())
 }
 
 class ConvertFileActor(implicit materializer: ActorMaterializer, dispatcher: ExecutionContext)
 	extends ConfigDataPersistence with Actor with LazyLogging {
 
-	override def receive = {
-		case ConvertFile(param) =>
-			val originalSender = sender()
-			preparToConvertToHtml(param) pipeTo originalSender
+	override def receive: akka.actor.Actor.Receive = {
+		case ConvertPdfFile(pdf) =>
+			print(s"Convert pdf file to html ${pdf}")
+			val result = convert(pdf)
+			print(result)
+	}
+
+	def convert(pdf: PdfObject): Either[Exception, HtmlObject] = {
+		try {
+			for {
+				exist <- validateFileIsInTheStorage(pdf.bucketName, pdf.fileName)
+				data <- storageService.getObject(pdf.bucketName, pdf.fileName)
+				savedFileName <- saveLocalFile(data, pdf.fileName)
+				param <- generateOSParameters(savedFileName)
+				htmlFile <- generateHtmlFile(param)
+				send <- sendToStorage(pdf.fileName)
+				htmlObject <- Right(HtmlObject.apply(pdf.bucketName, htmlFile))
+				data <- saveDataBase(htmlObject)
+			} yield htmlObject
+		}
+		catch {
+			case e: Exception => Left(e)
+		}
+	}
+
+	def saveDataBase(html: HtmlObject): Either[Exception, ObjectFileType] = {
+		try {
+			databaseService.insert(html)
+		}
+		catch {
+			case e: Exception => Left(e)
+		}
 	}
 
 	def preparToConvertToHtml(param: Parameters): Future[Either[Exception, ObjectFileType]] = Future {
@@ -60,7 +93,7 @@ class ConvertFileActor(implicit materializer: ActorMaterializer, dispatcher: Exe
 				file <- storageService.getObject(bucket.bucketName, pdfObejct.fileName)
 				savedPath <- saveLocalFile(file, pdfObejct.fileName)
 				seq <- generateOSParameters(param, savedPath)
-				output <- generateHtmlFile(bucket, pdfObejct, seq)
+				output <- generateHtmlFile(seq)
 				htmlFile <- sendToStorage(pdfObejct.fileName)
 				htmlObject <- Right(HtmlObject.apply(bucket.bucketName, htmlFile))
 				data <- databaseService.insert(htmlObject)
@@ -105,10 +138,19 @@ class ConvertFileActor(implicit materializer: ActorMaterializer, dispatcher: Exe
 		s.replaceAll(r, "") + ".html"
 	}
 
-	private def generateHtmlFile(bucket: ObjectStat, pdfObejct: PdfObject, seq: Seq[String]): Either[Exception, String] = {
+	private def generateHtmlFile(seq: Seq[String]): Either[Exception, String] = {
 		try {
 			val result = Process(seq).!!
 			Right(result)
+		} catch {
+			case e: Exception => Left(e)
+		}
+	}
+
+	private def generateOSParameters(filePath: String): Either[Exception, Seq[String]] = {
+		try {
+			val programName = Seq("pdf2htmlEX")
+			Right(programName ++ Seq(filePath) ++ Seq("--dest-dir") ++ Seq(getTempPath))
 		} catch {
 			case e: Exception => Left(e)
 		}
@@ -120,7 +162,7 @@ class ConvertFileActor(implicit materializer: ActorMaterializer, dispatcher: Exe
 				case Some(firstPage) =>
 					val programName = Seq("pdf2htmlEX")
 					val seq = returnListParam(param)
-					Right(programName ++ seq ++ Seq(filePath) ++ Seq("--dest-dir") ++ Seq(getTempPath))
+					Right(programName /*++ seq*/ ++ Seq(filePath) ++ Seq("--dest-dir") ++ Seq(getTempPath))
 				case None => Right(Seq())
 			}
 		} catch {
@@ -164,7 +206,7 @@ class ConvertFileActor(implicit materializer: ActorMaterializer, dispatcher: Exe
 
 	private def extractPath(filePath: String): Either[Exception, List[String]] = {
 		val path = filePath.split("/")
-		if (path.tail.size.==(2)) {
+		if (path.tail.length.==(2)) {
 			Right(path.toList)
 		} else {
 			Left(throw new Exception(s"There is not correspondent path like this ${path}"))

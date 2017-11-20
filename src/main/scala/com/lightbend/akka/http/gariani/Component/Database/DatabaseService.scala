@@ -1,7 +1,7 @@
 package com.lightbend.akka.http.gariani.Component.Database
 
-import com.lightbend.akka.http.gariani.Custom.Pdf.{ ObjectFileType }
-import com.lightbend.akka.http.gariani.Custom.{ DataBaseError }
+import com.lightbend.akka.http.gariani.Component.Pdf.ObjectFileType
+import com.lightbend.akka.http.gariani.Custom.DataBaseError
 
 import scala.util.Try
 

@@ -8,6 +8,6 @@ import com.softwaremill.tagging.@@
 
 class DataBaseConfig(val mongoDB: MongoDBConfig @@ MongoDBService, val couchDB: CouchDBConfig @@ CouchDBService)
 
-case class CouchDBConfig(val host: String, val port: Int, val username: String, val password: String, val databaseName: String)
+case class CouchDBConfig(host: String, port: Int, username: String, password: String, databaseName: String)
 
-case class MongoDBConfig(val uri: String)
+case class MongoDBConfig(uri: String)

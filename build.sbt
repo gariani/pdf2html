@@ -1,10 +1,10 @@
 lazy val akkaHttpVersion = "10.0.10"
 lazy val akkaVersion = "2.5.4"
 lazy val circeVersion = "0.8.0"
+lazy val opRabbitVersion = "2.0.0"
 
 lazy val root = (project in file(".")).
 	settings(
-
 		inThisBuild(List(
 			organization := "com.example",
 			scalaVersion := "2.12.3"
@@ -33,8 +33,18 @@ lazy val root = (project in file(".")).
 			"io.circe" %% "circe-parser" % circeVersion,
 			"com.wix" % "accord-core_2.12" % "0.7.1",
 			"org.apache.pdfbox" % "pdfbox" % "2.0.8",
-			"commons-io" % "commons-io" % "2.5"
+			"commons-io" % "commons-io" % "2.5",
+			"com.spingo" %% "op-rabbit-core" % opRabbitVersion,
+			"com.spingo" %% "op-rabbit-play-json" % opRabbitVersion,
+			"com.spingo" %% "op-rabbit-json4s" % opRabbitVersion,
+			"com.spingo" %% "op-rabbit-airbrake" % opRabbitVersion,
+			"com.spingo" %% "op-rabbit-akka-stream" % opRabbitVersion
 		)
 	)
 
-initialize ~= {_ => System.setProperty("macwire.debug", "")}
+initialize ~= { _ => System.setProperty("macwire.debug", "") }
+
+resolvers ++= Seq(
+	// repo for op-rabbit client
+	"SpinGo OSS" at "http://spingo-oss.s3.amazonaws.com/repositories/releases"
+)

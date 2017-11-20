@@ -15,7 +15,7 @@ object Parameter {
   import com.wix.accord._
   import dsl._
 
-  implicit val parametersValidator = validator[Parameters] { o =>
+	implicit private val parametersValidator = validator[Parameters] { o =>
     (o.firstPage.each as "firstPage" must be >= (1)) or (o.firstPage.each is aNull)
     (o.lastPage.each as "lastPage" must be >= (1)) or (o.lastPage.each as "lastPage" must be <= Int.MaxValue) or (o.lastPage.each is aNull)
   }

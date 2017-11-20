@@ -2,7 +2,7 @@ package com.lightbend.akka.http.gariani.Component.Database
 
 import akka.actor.ActorSystem
 import akka.util.Timeout
-import com.lightbend.akka.http.gariani.Custom.Pdf.{ ObjectFileType, PdfObject }
+import com.lightbend.akka.http.gariani.Component.Pdf.{ObjectFileType, PdfObject}
 import com.lightbend.akka.http.gariani.Custom.DataBaseError
 import com.softwaremill.tagging.@@
 import gnieh.sohva.CouchClient

@@ -79,7 +79,7 @@ class MinioService(val storage: MinioConfig @@ MinioService) extends StorageBasi
     try {
       minio match {
         case Success(m) => Right(m.getObject(bucketName, fileName))
-        case Failure(m) => throw new Exception(s"An error occurred when get object: ${m.getMessage}")
+        case Failure(m) => throw new Exception(s"An error occurred when get object: ${m} \n Message: ${m.getMessage}")
       }
     } catch {
       case e: Exception => Left(e)

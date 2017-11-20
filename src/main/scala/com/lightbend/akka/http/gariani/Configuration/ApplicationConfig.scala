@@ -4,7 +4,7 @@ import com.lightbend.akka.http.gariani.Component.Database.DataBaseConfig
 import com.lightbend.akka.http.gariani.Component.Storage.StorageConfig
 import com.lightbend.akka.http.gariani.Component.WebApi.WebApiConfig
 import com.softwaremill.tagging._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.readers.ValueReader
 
 /**
@@ -15,7 +15,7 @@ class ApplicationConfig(val webservice: WebApiConfig, val storage: StorageConfig
 
 object ApplicationConfig {
 
-  lazy val rawConfig = ConfigFactory.load()
+	lazy val rawConfig: Config = ConfigFactory.load()
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._

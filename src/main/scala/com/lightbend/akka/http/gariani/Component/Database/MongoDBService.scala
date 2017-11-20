@@ -1,7 +1,7 @@
 package com.lightbend.akka.http.gariani.Component.Database
 
-import com.lightbend.akka.http.gariani.Custom.Pdf.{ ObjectFileType, PdfObject }
-import com.lightbend.akka.http.gariani.Custom.{ DataBaseError }
+import com.lightbend.akka.http.gariani.Component.Pdf.{ObjectFileType}
+import com.lightbend.akka.http.gariani.Custom.DataBaseError
 import com.softwaremill.tagging.@@
 import org.bson.codecs.configuration.CodecRegistries.{ fromProviders, fromRegistries }
 import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY

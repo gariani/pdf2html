@@ -16,6 +16,7 @@ object HelpPdf2Html {
        }
 		 """
 }
+
 /*val help =
     s"""{
     "--first-page": "first page to convert (default: 1)",

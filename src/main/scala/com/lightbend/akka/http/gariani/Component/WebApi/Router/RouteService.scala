@@ -2,14 +2,15 @@ package com.lightbend.akka.http.gariani.Component.WebApi.Router
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.lightbend.akka.http.gariani.Component.Json.PdfJsonProtocol
-import com.lightbend.akka.http.gariani.Custom.Pdf.{HtmlObject, ObjectFileType, PdfObject}
+import com.lightbend.akka.http.gariani.Component.Pdf.{HtmlObject, PdfObject}
 import com.lightbend.akka.http.gariani.Custom._
 import com.lightbend.akka.http.gariani.Help.HelpPdf2Html
-import com.lightbend.akka.http.gariani.WebService.Actors.{ConvertFile, GetMultiPart}
+import com.lightbend.akka.http.gariani.WebService.Actors.ConvertFileActor.{ConvertFile, GetMultiPart}
 import com.softwaremill.tagging.@@
 
 import scala.concurrent.duration._
@@ -22,13 +23,14 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 
 trait SaveFileType
+
 trait ConvertFileType
 
 class RouteService(val saveFileActor: ActorRef @@ SaveFileType, val convertFile: ActorRef @@ ConvertFileType)
                   (implicit val ac: ActorSystem, afm: ActorMaterializer, ec: ExecutionContext)
     extends Resource with PdfJsonProtocol {
 
-  val route = {
+	val route: Route = {
     path("help") {
       get {
         complete(HttpEntity(ContentTypes.`application/json`, HelpPdf2Html.help))
@@ -61,8 +63,34 @@ class RouteService(val saveFileActor: ActorRef @@ SaveFileType, val convertFile:
               complete(result.get)
             }
           }
-        } ~
-          complete("I don't understand!")
-      }
+				}
+			} ~
+			path("upload2") {
+				post {
+					entity(as[Multipart.FormData]) { (fileData: Multipart.FormData) =>
+						val saveFile = new SaveFile()
+						val saved = saveFile.saveFile(fileData)
+						complete {
+							saved
+						}
+					}
+				}
+			} ~
+			path("convert2") {
+				post {
+					entity(as[Parameters]) { param =>
+						implicit val timeout = Timeout(60 seconds)
+						val pdfObject: Future[Either[Exception, HtmlObject]] =
+							ask(convertFile, ConvertFile(param)).mapTo[Either[Exception, HtmlObject]]
+						onSuccess(pdfObject) {
+							case Right(pdf) => complete(pdf)
+							case Left(error) =>
+								print(error)
+								complete(DataBaseError(error.getMessage))
+						}
+					}
+				}
+			} ~
+			complete("I don't understand!")
   }
 }
