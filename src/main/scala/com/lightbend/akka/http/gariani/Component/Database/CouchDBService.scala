@@ -9,7 +9,8 @@ import gnieh.sohva.CouchClient
 
 import scala.util.Try
 
-class CouchDBService(val couchDB: CouchDBConfig @@ CouchDBService)(implicit system: ActorSystem, implicit val timeout: Timeout) extends DatabaseBasic {
+class CouchDBService(val couchDB: CouchDBConfig @@ CouchDBService)(implicit system: ActorSystem, implicit val timeout: Timeout)
+	extends DatabaseBasic[CouchDBService] {
 
   lazy val couch: CouchClient = new CouchClient(couchDB.host, couchDB.port)
 

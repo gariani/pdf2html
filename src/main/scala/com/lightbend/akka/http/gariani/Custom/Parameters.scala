@@ -1,5 +1,7 @@
 package com.lightbend.akka.http.gariani.Custom
 
+import scala.None
+
 /**
  * Created by daniel on 03/10/17.
  */
@@ -16,14 +18,24 @@ object Parameter {
   import dsl._
 
 	implicit private val parametersValidator = validator[Parameters] { o =>
-    (o.firstPage.each as "firstPage" must be >= (1)) or (o.firstPage.each is aNull)
-    (o.lastPage.each as "lastPage" must be >= (1)) or (o.lastPage.each as "lastPage" must be <= Int.MaxValue) or (o.lastPage.each is aNull)
+		(o.firstPage.each as "firstPage" must be >= (1))
+		(o.lastPage.each as "lastPage" must be >= (1)) or
+			(o.lastPage.each as "lastPage" must be <= Int.MaxValue)
   }
 
   def validParameters(op: Parameters): Either[String, Parameters] = {
     validate(op) match {
       case Success => Right(op)
-      case Failure(e) => print(e.mkString); Left(e.toString())
+			case Failure(e) => Left(e.toString())
+		}
+	}
+
+	def getMap(param: Option[Parameters]): Seq[String] = {
+		param match {
+			case Some(p) =>
+				val map = Seq("--first-page", p.firstPage.getOrElse(1).toString, "--last-page", p.lastPage.getOrElse(Int.MaxValue).toString)
+				map
+			case None => Seq.empty
     }
   }
 }

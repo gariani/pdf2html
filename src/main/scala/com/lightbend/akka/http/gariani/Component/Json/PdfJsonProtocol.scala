@@ -10,6 +10,7 @@ trait PdfJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol {
 	implicit val parametersFormat = jsonFormat3(Parameters)
 	implicit val pdfObjectFormat = jsonFormat4(PdfObject.apply)
 	implicit val pdfObject = Json.format[PdfObject]
+	implicit val paramObject = Json.format[Parameters]
 	implicit val databaseErrorFormat = jsonFormat1(DataBaseError)
 	implicit val htmlObject = jsonFormat3(HtmlObject.apply)
 }

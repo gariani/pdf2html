@@ -30,13 +30,12 @@ trait WebApiAkka extends WebApiBasic {
 
 }
 
-class AkkaService(val route: RouteService, val akkaConfig: AkkaConfig @@ AkkaService)
-								 (implicit val ac: ActorSystem, afm: ActorMaterializer, ec: ExecutionContext)
-	extends WebApiAkka {
+class AkkaService(val route: RouteService, val akkaConfig: AkkaConfig @@ AkkaService)(implicit val ac: ActorSystem, afm: ActorMaterializer, ec: ExecutionContext)
+  extends WebApiAkka {
 
   private val logger = LoggerFactory.getLogger("server")
 
-	val supervisor = ac.actorOf(Supervisor.props)
+  val supervisor = ac.actorOf(Supervisor.props)
 
   def bind: Future[ServerBinding] = {
     Http(ac).bindAndHandle(route.route, akkaConfig.host, akkaConfig.port)
@@ -44,12 +43,13 @@ class AkkaService(val route: RouteService, val akkaConfig: AkkaConfig @@ AkkaSer
 
   def afterStart(binding: ServerBinding): Unit = {
     logger.info(s"Server started on ${binding.localAddress.toString}")
-		supervisor ! Begin
+    supervisor ! Begin
   }
 
   def beforeStop(binding: ServerBinding): Unit = {
     Await.ready({
-			supervisor ! End
+      supervisor ! End
+      ac.terminate()
       binding.unbind().map { _ =>
         logger.info("Shutting down")
       }

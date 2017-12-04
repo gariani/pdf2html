@@ -7,9 +7,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Multipart
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.lightbend.akka.http.gariani.Component.{ConfigDataPersistence}
+import com.lightbend.akka.http.gariani.Component.ConfigDataPersistence
 import com.lightbend.akka.http.gariani.Component.Pdf.PdfObject
-import com.lightbend.akka.http.gariani.Component.RabbitMQ.{NewFileConvert, PublisherFileActor}
+import com.lightbend.akka.http.gariani.Component.RabbitMQ.PublisherFileActor.NewFileConvert
+import com.lightbend.akka.http.gariani.Component.RabbitMQ.PublisherFileActor
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -23,15 +25,12 @@ class SaveFile(implicit ac: ActorSystem, afm: ActorMaterializer)
 
 	def saveFile(fileData: Multipart.FormData): Future[Option[PdfObject]] = {
 		val fileName = UUID.randomUUID().toString + ".pdf"
-		val temp = System.getProperty("java.io.tmpdir")
-		val filePath = temp + "/" + fileName
-		processFile(filePath, fileData).map {
+		val temp = System.getProperty("java.io.tmpdir") + "/" + fileName
+		processFile(temp, fileData).map {
 			case size: Int if size > 0 =>
 				val obj = PdfObject.apply(storageService.getBucketName, fileName, size)
-				databaseService.insert(obj)
-				storageService.putObject(fileName, filePath)
-				val publish = ac.actorOf(PublisherFileActor.props)
-				publish ! NewFileConvert(obj)
+				databaseService.collection("pdf2html").insert(obj)
+				storageService.putObject(fileName, temp)
 				Some(obj)
 			case _ => None
 		}

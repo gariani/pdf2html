@@ -34,7 +34,7 @@ class SaveFileActor(implicit materializer: ActorMaterializer, dispatcher: Execut
 		processFile(filePath, fileData).map {
 			case size: Int if size > 0 =>
 				val obj = PdfObject.apply(storageService.getBucketName, fileName, size)
-				databaseService.insert(obj)
+				databaseService.collection("pdf2html").insert(obj)
 				storageService.putObject(fileName, filePath)
 				Some(obj)
 			case _ => None

@@ -6,8 +6,10 @@ sealed class ObjectFileType
 
 object PdfObject {
 
-	def apply(bucketName: String, fileName: String, size: Long): PdfObject =
-    new PdfObject(new ObjectId().toString, bucketName, fileName, size)
+	def apply(bucketName: String, fileName: String, size: Long): PdfObject = {
+		val objectId = new ObjectId().toString
+		new PdfObject(objectId, bucketName, fileName, size)
+	}
 
   import com.wix.accord._
   import dsl._
@@ -31,3 +33,4 @@ object HtmlObject {
 
 case class HtmlObject(_id: String, bucketName: String, fileName: String) extends ObjectFileType
 
+case class EmptyClass(_id: String = "") extends ObjectFileType

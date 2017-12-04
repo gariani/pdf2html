@@ -10,4 +10,5 @@ class DataBaseConfig(val mongoDB: MongoDBConfig @@ MongoDBService, val couchDB: 
 
 case class CouchDBConfig(host: String, port: Int, username: String, password: String, databaseName: String)
 
-case class MongoDBConfig(uri: String)
+case class MongoDBConfig(uri: String, username: String = "", password: String = "", databaseName: String,
+												 collection: List[String])

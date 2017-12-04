@@ -4,7 +4,7 @@ import com.lightbend.akka.http.gariani.Component.{ConfigAkkaComponent, ConfigRab
 import com.lightbend.akka.http.gariani.Component.WebApi.WebApiAkka
 
 object WebServer
-	extends App with ConfigAkkaComponent with ConfigRabbitMQComponent {
+  extends App with ConfigAkkaComponent with ConfigRabbitMQComponent {
 
   lazy val webApi = webApiService.asInstanceOf[WebApiAkka]
 

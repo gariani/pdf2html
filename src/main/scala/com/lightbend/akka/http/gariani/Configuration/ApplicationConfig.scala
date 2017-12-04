@@ -15,7 +15,7 @@ class ApplicationConfig(val webservice: WebApiConfig, val storage: StorageConfig
 
 object ApplicationConfig {
 
-	lazy val rawConfig: Config = ConfigFactory.load()
+	lazy val rawConfig: Config = ConfigFactory.load("reference.conf")
 
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
